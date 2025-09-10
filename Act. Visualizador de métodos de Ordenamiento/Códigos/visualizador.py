@@ -7,9 +7,17 @@ import time
 ANCHO = 800
 ALTO = 300
 MIN_BARS, MAX_BARS = 3, 1_000
-N_BARRAS = 40 #control de número de barras
+N_BARRAS = 40  # control de número de barras
 VAL_MIN, VAL_MAX = 5, 100
 RETARDO_MS = 50  # velocidad de animación
+
+# Configuración de colores para tema oscuro
+COLOR_FONDO = "#333333"
+COLOR_BOTONES = "#555555"
+COLOR_TEXTO = "#FFFFFF"
+COLOR_BOTON_ACCION = "#555555"
+COLOR_BARRAS = "#67D618"
+COLOR_BARRAS_ACTIVAS = "#6418D6"
 
 # Algoritmo: Selection Sort
 def selection_sort_steps(data, draw_callback):
@@ -24,19 +32,18 @@ def selection_sort_steps(data, draw_callback):
         draw_callback(activos=[i, min_idx]); yield
     draw_callback(activos=[])
 
-#Algoritmo: Bubble Sort
-def bubble_sort_steps (data, draw_callback):
+# Algoritmo: Bubble Sort
+def bubble_sort_steps(data, draw_callback):
     n = len(data)
     for i in range(n):
         for j in range(0, n - i - 1):
-            draw_callback(activos=[i, j]); yield #
+            draw_callback(activos=[i, j]); yield
             if data[j] > data[j + 1]:
                 data[j], data[j + 1] = data[j + 1], data[j]
-        draw_callback(activos=[i, j]); yield #
-    draw_callback(activos=[]) #
-    #return data
+        draw_callback(activos=[i, j]); yield
+    draw_callback(activos=[])
 
-#Algoritmo: Quick sort
+# Algoritmo: Quick sort
 def quick_sort_steps(data, draw_callback, start=0, end=None):
     if end is None:
         end = len(data) - 1
@@ -82,6 +89,8 @@ def merge_sort_steps(data, draw_callback, start=0, end=None):
     yield from merge_sort_steps(data, draw_callback, start, mid)
     yield from merge_sort_steps(data, draw_callback, mid + 1, end)
     yield from merge(data, start, mid, end, draw_callback)
+    draw_callback(activos=[])
+    yield
 
 def merge(data, start, mid, end, draw_callback):
     izquierda = data[start:mid + 1]
@@ -117,10 +126,10 @@ def merge(data, start, mid, end, draw_callback):
         k += 1
         draw_callback(activos=[k - 1])
         yield
-    draw_callback(activos=list(range(start, end + 1)))
+    draw_callback(activos=[])
     yield
 
-#Selector de algoritmos
+# Selector de algoritmos
 def algorithm_selector():
     algorithm = combo.get()
     if algorithm == "Selection Sort":
@@ -133,16 +142,16 @@ def algorithm_selector():
         gen = merge_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
     else:
         messagebox.showwarning("Algoritmo no seleccionado", "⚠️ Selecciona un algoritmo")
+        return
+    
     def paso():
         try:
             next(gen)
-            if retardo_var.get() > 0:
-                root.after(retardo_var.get(), paso)
+            root.after(retardo_var.get(), paso)
         except StopIteration:
             pass
+    
     paso()
-    return None
-
 
 # Función de dibujo
 def dibujar_barras(canvas, datos, activos=None):
@@ -160,19 +169,11 @@ def dibujar_barras(canvas, datos, activos=None):
         h = v * esc
         y0 = ALTO - margen - h
         y1 = ALTO - margen
-        color = "#67D618"
+        color = COLOR_BARRAS
         if activos and i in activos:
-            color = "#6418D6"
+            color = COLOR_BARRAS_ACTIVAS
         canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
-    canvas.create_text(6, 6, anchor="nw", text=f"n={len(datos)}", fill="#666")
-
-# Aplicación principal
-datos = []
-root = tk.Tk()
-root.title("Visualizador - Selection Sort")
-canvas = tk.Canvas(root, width=ANCHO, height=ALTO, bg="white")
-canvas.pack(padx=10, pady=10)
-retardo_var = tk.IntVar(value=RETARDO_MS)
+    canvas.create_text(6, 6, anchor="nw", text=f"n={len(datos)}", fill=COLOR_TEXTO)
 
 def generar():
     global datos
@@ -193,85 +194,66 @@ def change_n():
             N_BARRAS = val
             generar()
     except ValueError:
-                messagebox.showwarning("Valor inválido", f"⚠️ Ingresa un número entero entre {MIN_BARS} y {MAX_BARS}")
+        messagebox.showwarning("Valor inválido", f"⚠️ Ingresa un número entero entre {MIN_BARS} y {MAX_BARS}")
 
 def shuffle_data():
     global datos
     random.shuffle(datos)
     dibujar_barras(canvas, datos)
 
-"""
-def ordenar_selection():
-    if not datos: return
-    gen = selection_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
-    def paso():
-        try:
-            next(gen)
-            root.after(RETARDO_MS, paso)
-        except StopIteration:
-            pass
-    paso()
+# Aplicación principal
+datos = []
+root = tk.Tk()
+root.title("Visualizador de Algoritmos de Ordenamiento")
+root.configure(bg=COLOR_FONDO)
 
-def ordenar_bubble():
-    if not datos: return
-    gen = bubble_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
-    def paso():
-        try:
-            next(gen)
-            root.after(RETARDO_MS, paso)
-        except StopIteration:
-            pass
-    paso()
+# Configurar la estructura de la interfaz
+# Crear frames para la estructura 3x3
+frame_superior = tk.Frame(root, bg=COLOR_FONDO)
+frame_superior.pack(fill="x", padx=10, pady=5)
 
-def ordenar_quick():
-    if not datos: return
-    gen = quick_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
-    def paso():
-        try:
-            next(gen)
-            root.after(RETARDO_MS, paso)
-        except StopIteration:
-            pass
-    paso()
+frame_medio = tk.Frame(root, bg=COLOR_FONDO)
+frame_medio.pack(fill="both", expand=True, padx=10, pady=5)
 
-def ordenar_merge():
-    if not datos: return
-    gen = merge_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
-    def paso():
-        try:
-            next(gen)
-            root.after(RETARDO_MS, paso)
-        except StopIteration:
-            pass
-    paso()
-"""
-    
-panel = tk.Frame(root)
-panel.pack(pady=6)
+frame_inferior = tk.Frame(root, bg=COLOR_FONDO)
+frame_inferior.pack(fill="x", padx=10, pady=5)
 
-generate_btn = tk.Button(panel, text="Generar", command=generar)
-generate_btn.pack(side="left", padx=5)
-
-algorithms = ["Selection Sort","Bubble Sort","Quick Sort","Merge Sort"]
-combo = ttk.Combobox(panel, values=algorithms)
-combo.set("Selecciona algoritmo") 
+# Frame superior (cuadrantes 1-3)
+# Algoritmo
+tk.Label(frame_superior, text="Algoritmo:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=5)
+algorithms = ["Selection Sort", "Bubble Sort", "Quick Sort", "Merge Sort"]
+combo = ttk.Combobox(frame_superior, values=algorithms, width=20)
+combo.set("Selecciona algoritmo")
 combo.pack(side="left", padx=5)
 
-sort_btn = tk.Button(panel, text="Ordenar", command=algorithm_selector)
-sort_btn.pack(side="bottom", padx=5)
 
-shuffle_btn = tk.Button(panel, text="Shuffle", command=shuffle_data)
-shuffle_btn.pack(side="left", padx=5)
-
+tk.Label(frame_superior, text="Número de barras:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
 entry_var = tk.IntVar(value=N_BARRAS)
-entry = tk.Entry(panel, textvariable=entry_var, width=5)
+entry = tk.Entry(frame_superior, textvariable=entry_var, width=5, bg=COLOR_BOTONES, fg=COLOR_TEXTO)
 entry.pack(side="left", padx=5)
 
-change_n_btn = tk.Button(panel,text="Cambiar",command=change_n)
+change_n_btn = tk.Button(frame_superior, text="Cambiar", command=change_n,bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
 change_n_btn.pack(side="left", padx=5)
 
-retardo_slider = tk.Scale(panel, from_=0, to=200, orient="horizontal", variable=retardo_var, length=150)
+tk.Label(frame_superior, text="Genera nuevos datos para N:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
+generate_btn = tk.Button(frame_superior, text="Generar", command=generar,bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
+generate_btn.pack(side="left", padx=5)
+
+canvas = tk.Canvas(frame_medio, width=ANCHO, height=ALTO, bg=COLOR_FONDO, highlightthickness=0)
+canvas.pack(fill="both", expand=True)
+
+shuffle_btn = tk.Button(frame_inferior, text="Shuffle", command=shuffle_data,bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
+shuffle_btn.pack(side="left", padx=5)
+
+tk.Label(frame_inferior, text="0ms", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
+retardo_var = tk.IntVar(value=RETARDO_MS)
+retardo_slider = tk.Scale(frame_inferior, from_=0, to=200, orient="horizontal", variable=retardo_var, length=300, bg=COLOR_BOTONES, fg=COLOR_TEXTO, highlightthickness=0)
 retardo_slider.pack(side="left", padx=5)
+tk.Label(frame_inferior, text="200ms", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=5)
+
+sort_btn = tk.Button(frame_inferior, text="Ordenar", command=algorithm_selector, bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
+sort_btn.pack(side="right", padx=5)
+
 
 generar()
 root.mainloop()
