@@ -173,7 +173,7 @@ def dibujar_barras(canvas, datos, activos=None):
         if activos and i in activos:
             color = COLOR_BARRAS_ACTIVAS
         canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
-    canvas.create_text(6, 6, anchor="nw", text=f"n={len(datos)}", fill=COLOR_TEXTO)
+    canvas.create_text(6, -1, anchor="nw", text=f"N={len(datos)}", fill=COLOR_TEXTO)
 
 def generar():
     global datos
@@ -207,6 +207,23 @@ root = tk.Tk()
 root.title("Visualizador de Algoritmos de Ordenamiento")
 root.configure(bg=COLOR_FONDO)
 
+# Crear estilo para el Combobox
+style = ttk.Style()
+style.theme_use('clam')  # Usar el tema 'clam' que permite más personalización
+
+# Configurar colores del Combobox
+style.configure('TCombobox', 
+                fieldbackground=COLOR_BOTONES,  # Color de fondo del campo de texto
+                background=COLOR_BOTONES,       # Color de fondo de la flecha
+                foreground=COLOR_TEXTO,         # Color del texto
+                selectbackground=COLOR_BOTONES,  # Color de fondo de la selección
+                selectforeground=COLOR_TEXTO)   # Color del texto seleccionado
+
+style.map('TCombobox', 
+        fieldbackground=[('readonly', COLOR_BOTONES)],
+        background=[('readonly', COLOR_BOTONES)],
+        foreground=[('readonly', COLOR_TEXTO)])
+
 # Configurar la estructura de la interfaz
 # Crear frames para la estructura 3x3
 frame_superior = tk.Frame(root, bg=COLOR_FONDO)
@@ -227,21 +244,21 @@ combo.set("Selecciona algoritmo")
 combo.pack(side="left", padx=5)
 
 
-tk.Label(frame_superior, text="Número de barras:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
+tk.Label(frame_superior, text="Número de barras:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(100, 5))
 entry_var = tk.IntVar(value=N_BARRAS)
 entry = tk.Entry(frame_superior, textvariable=entry_var, width=5, bg=COLOR_BOTONES, fg=COLOR_TEXTO)
 entry.pack(side="left", padx=5)
-
 change_n_btn = tk.Button(frame_superior, text="Cambiar", command=change_n,bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
 change_n_btn.pack(side="left", padx=5)
 
-tk.Label(frame_superior, text="Genera nuevos datos para N:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
+tk.Label(frame_superior, text="Genera nuevos datos para N:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(100, 5))
 generate_btn = tk.Button(frame_superior, text="Generar", command=generar,bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
 generate_btn.pack(side="left", padx=5)
 
 canvas = tk.Canvas(frame_medio, width=ANCHO, height=ALTO, bg=COLOR_FONDO, highlightthickness=0)
 canvas.pack(fill="both", expand=True)
 
+tk.Label(frame_inferior, text="Mezclar elementos actuales:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=5)
 shuffle_btn = tk.Button(frame_inferior, text="Shuffle", command=shuffle_data,bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
 shuffle_btn.pack(side="left", padx=5)
 
@@ -251,9 +268,10 @@ retardo_slider = tk.Scale(frame_inferior, from_=0, to=200, orient="horizontal", 
 retardo_slider.pack(side="left", padx=5)
 tk.Label(frame_inferior, text="200ms", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=5)
 
-sort_btn = tk.Button(frame_inferior, text="Ordenar", command=algorithm_selector, bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
-sort_btn.pack(side="right", padx=5)
 
+tk.Label(frame_inferior, text="Comenzar ordenamiento:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
+sort_btn = tk.Button(frame_inferior, text="Ordenar", command=algorithm_selector, bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
+sort_btn.pack(side="left", padx=5)
 
 generar()
 root.mainloop()
