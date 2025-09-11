@@ -3,15 +3,13 @@ from tkinter import ttk, messagebox
 import random
 import time
 
-# Parámetros generales
 ANCHO = 800
 ALTO = 300
 MIN_BARS, MAX_BARS = 3, 1_000
-N_BARRAS = 40  # control de número de barras
+N_BARRAS = 40  
 VAL_MIN, VAL_MAX = 5, 100
-RETARDO_MS = 50  # velocidad de animación
+RETARDO_MS = 50  
 
-# Configuración de colores para tema oscuro
 COLOR_FONDO = "#333333"
 COLOR_BOTONES = "#555555"
 COLOR_TEXTO = "#FFFFFF"
@@ -19,7 +17,10 @@ COLOR_BOTON_ACCION = "#555555"
 COLOR_BARRAS = "#67D618"
 COLOR_BARRAS_ACTIVAS = "#6418D6"
 
-# Algoritmo: Selection Sort
+tiempo_inicio = 0
+tiempo_fin = 0
+temporizador_activo = False
+
 def selection_sort_steps(data, draw_callback):
     n = len(data)
     for i in range(n):
@@ -32,7 +33,6 @@ def selection_sort_steps(data, draw_callback):
         draw_callback(activos=[i, min_idx]); yield
     draw_callback(activos=[])
 
-# Algoritmo: Bubble Sort
 def bubble_sort_steps(data, draw_callback):
     n = len(data)
     for i in range(n):
@@ -43,7 +43,6 @@ def bubble_sort_steps(data, draw_callback):
         draw_callback(activos=[i, j]); yield
     draw_callback(activos=[])
 
-# Algoritmo: Quick sort
 def quick_sort_steps(data, draw_callback, start=0, end=None):
     if end is None:
         end = len(data) - 1
@@ -129,8 +128,28 @@ def merge(data, start, mid, end, draw_callback):
     draw_callback(activos=[])
     yield
 
-# Selector de algoritmos
+def iniciar_temporizador():
+    global tiempo_inicio, temporizador_activo
+    tiempo_inicio = time.time()
+    temporizador_activo = True
+    actualizar_tiempo_label("Tiempo: 0.000s")
+
+def detener_temporizador():
+    global tiempo_fin, temporizador_activo
+    tiempo_fin = time.time()
+    temporizador_activo = False
+    tiempo_transcurrido = (tiempo_fin - tiempo_inicio) * 1000
+    actualizar_tiempo_label(f"Tiempo: {tiempo_transcurrido:.2f}ms")
+
+def actualizar_tiempo_label(texto):
+    tiempo_label.config(text=texto)
+
 def algorithm_selector():
+    global temporizador_activo
+    
+    if temporizador_activo:
+        detener_temporizador()
+    
     algorithm = combo.get()
     if algorithm == "Selection Sort":
         gen = selection_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
@@ -144,16 +163,17 @@ def algorithm_selector():
         messagebox.showwarning("Algoritmo no seleccionado", "⚠️ Selecciona un algoritmo")
         return
     
+    iniciar_temporizador()
+    
     def paso():
         try:
             next(gen)
             root.after(retardo_var.get(), paso)
         except StopIteration:
-            pass
+            detener_temporizador()
     
     paso()
 
-# Función de dibujo
 def dibujar_barras(canvas, datos, activos=None):
     canvas.delete("all")
     if not datos: return
@@ -176,13 +196,22 @@ def dibujar_barras(canvas, datos, activos=None):
     canvas.create_text(6, -1, anchor="nw", text=f"N={len(datos)}", fill=COLOR_TEXTO)
 
 def generar():
-    global datos
+    global datos, temporizador_activo
+    
+    if temporizador_activo:
+        detener_temporizador()
+    
     random.seed(time.time())
     datos = [random.randint(VAL_MIN, VAL_MAX) for _ in range(N_BARRAS)]
     dibujar_barras(canvas, datos)
+    actualizar_tiempo_label("Tiempo: -- ms")
 
 def change_n():
-    global N_BARRAS
+    global N_BARRAS, temporizador_activo
+    
+    if temporizador_activo:
+        detener_temporizador()
+    
     try:
         val = int(entry.get())
         if val < MIN_BARS or val > MAX_BARS:
@@ -197,35 +226,35 @@ def change_n():
         messagebox.showwarning("Valor inválido", f"⚠️ Ingresa un número entero entre {MIN_BARS} y {MAX_BARS}")
 
 def shuffle_data():
-    global datos
+    global datos, temporizador_activo
+    
+    if temporizador_activo:
+        detener_temporizador()
+    
     random.shuffle(datos)
     dibujar_barras(canvas, datos)
+    actualizar_tiempo_label("Tiempo: --")
 
-# Aplicación principal
 datos = []
 root = tk.Tk()
 root.title("Visualizador de Algoritmos de Ordenamiento")
 root.configure(bg=COLOR_FONDO)
 
-# Crear estilo para el Combobox
 style = ttk.Style()
-style.theme_use('clam')  # Usar el tema 'clam' que permite más personalización
+style.theme_use('clam') 
 
-# Configurar colores del Combobox
 style.configure('TCombobox', 
-                fieldbackground=COLOR_BOTONES,  # Color de fondo del campo de texto
-                background=COLOR_BOTONES,       # Color de fondo de la flecha
-                foreground=COLOR_TEXTO,         # Color del texto
-                selectbackground=COLOR_BOTONES,  # Color de fondo de la selección
-                selectforeground=COLOR_TEXTO)   # Color del texto seleccionado
+    fieldbackground=COLOR_BOTONES,  
+    background=COLOR_BOTONES,       
+    foreground=COLOR_TEXTO,         
+    selectbackground=COLOR_BOTONES,  
+    selectforeground=COLOR_TEXTO)  
 
 style.map('TCombobox', 
-        fieldbackground=[('readonly', COLOR_BOTONES)],
-        background=[('readonly', COLOR_BOTONES)],
-        foreground=[('readonly', COLOR_TEXTO)])
+    fieldbackground=[('readonly', COLOR_BOTONES)],
+    background=[('readonly', COLOR_BOTONES)],
+    foreground=[('readonly', COLOR_TEXTO)])
 
-# Configurar la estructura de la interfaz
-# Crear frames para la estructura 3x3
 frame_superior = tk.Frame(root, bg=COLOR_FONDO)
 frame_superior.pack(fill="x", padx=10, pady=5)
 
@@ -235,14 +264,17 @@ frame_medio.pack(fill="both", expand=True, padx=10, pady=5)
 frame_inferior = tk.Frame(root, bg=COLOR_FONDO)
 frame_inferior.pack(fill="x", padx=10, pady=5)
 
-# Frame superior (cuadrantes 1-3)
-# Algoritmo
+frame_tiempo = tk.Frame(root, bg=COLOR_FONDO)
+frame_tiempo.pack(fill="x", padx=10, pady=(10, 0))
+
+tiempo_label = tk.Label(frame_tiempo, text="Tiempo: --", bg=COLOR_FONDO, fg=COLOR_TEXTO, font=('Arial', 12, 'bold'))
+tiempo_label.pack(side="right", padx=10)
+
 tk.Label(frame_superior, text="Algoritmo:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=5)
 algorithms = ["Selection Sort", "Bubble Sort", "Quick Sort", "Merge Sort"]
 combo = ttk.Combobox(frame_superior, values=algorithms, width=20)
 combo.set("Selecciona algoritmo")
 combo.pack(side="left", padx=5)
-
 
 tk.Label(frame_superior, text="Número de barras:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(100, 5))
 entry_var = tk.IntVar(value=N_BARRAS)
@@ -267,7 +299,6 @@ retardo_var = tk.IntVar(value=RETARDO_MS)
 retardo_slider = tk.Scale(frame_inferior, from_=0, to=200, orient="horizontal", variable=retardo_var, length=300, bg=COLOR_BOTONES, fg=COLOR_TEXTO, highlightthickness=0)
 retardo_slider.pack(side="left", padx=5)
 tk.Label(frame_inferior, text="200ms", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=5)
-
 
 tk.Label(frame_inferior, text="Comenzar ordenamiento:", bg=COLOR_FONDO, fg=COLOR_TEXTO).pack(side="left", padx=(20, 5))
 sort_btn = tk.Button(frame_inferior, text="Ordenar", command=algorithm_selector, bg=COLOR_BOTON_ACCION, fg=COLOR_TEXTO)
