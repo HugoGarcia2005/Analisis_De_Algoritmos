@@ -61,7 +61,6 @@ def process_next_matrix():
         finalize_process()
 
 def finalize_process():
-    """Se ejecuta cuando todas las matrices han sido procesadas."""
     status_label.config(text=f"Proceso finalizado. Se encontraron {len(found_squares)} cuadrados latinos.")
     start_button.config(state="normal", text="Comenzar")
 
@@ -88,7 +87,6 @@ def display_selected_square(selected_value):
             break
 
 def start_process():
-    """Función que se llama al presionar el botón 'Comenzar'."""
     global n_val, combinaciones_iter, total_matrices, matrix_index, found_squares, matrix_labels
 
     try:
