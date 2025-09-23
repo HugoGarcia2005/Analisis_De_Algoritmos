@@ -148,7 +148,7 @@ start_button.pack(side=tk.LEFT)
 matrix_frame = tk.Frame(main_frame, bg=COLORS["frame_bg"], padx=10, pady=10)
 matrix_frame.pack(pady=10)
 
-status_label = tk.Label(main_frame, text="Introduce un valor para ""n"" (1-3)", font=("Helvetica", 11), bg=COLORS["background"], fg=COLORS["text"])
+status_label = tk.Label(main_frame, text="Introduce un valor para ""n"" (1 - 10)", font=("Helvetica", 11), bg=COLORS["background"], fg=COLORS["text"])
 status_label.pack(pady=(10, 0))
 results_frame = tk.Frame(main_frame, bg=COLORS["background"])
 results_frame.pack(pady=10)
