@@ -1,0 +1,31 @@
+Equipo Tr3s:
+Oswaldo Daniel Maciel Vargas
+Hugo Gabriel García Saldivar
+
+Avances esperados para el sábado 4 de octubre:
+
+Código:
+
+Ambos:
+-Instalar e importar las librerías necesarias
+-Descargar base
+-Separar características
+
+Hugo:
+-Visualización de resultados
+-Identificar los clusters
+
+Daniel:
+-AplicaR la reducción de dimensionalidad utilizando TMAP en la base de datos
+-Volver a aplicar TMAP sobre este subset para identificar subclusters dentro del cluster principal
+
+
+Reporte:
+Desde la portada hasta el objetivo
+
+Hugo:
+-Introducción
+
+Daniel:
+-Portada
+-Objetivos
