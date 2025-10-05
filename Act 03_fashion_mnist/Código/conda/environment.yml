@@ -1,0 +1,12 @@
+name: fmnist_viz
+channels:
+  - conda-forge
+  - tmap
+dependencies:
+  - python=3.9
+  - numpy
+  - pillow
+  - tmap
+  - pip
+  - pip:
+    - faerun
