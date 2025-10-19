@@ -1,12 +1,16 @@
 from PIL import Image, ImageDraw
 
+# --- PARÁMETROS DE CONFIGURACIÓN ---
 PADDING = 0
 OUTPUT_SCALE = 1
-ERROR_THRESHOLD = 7
+# Umbral de error: un valor más bajo resultará en más detalle (y más tiempo de procesamiento)
+ERROR_THRESHOLD = 15 
+# Profundidad máxima del árbol para evitar recursiones infinitas
+MAX_DEPTH = 8
 
 
 def weighted_average(hist):
-    """Returns the weighted color average and error from a hisogram of pixles"""
+    """Devuelve el promedio de color ponderado y el error de un histograma de píxeles."""
     total = sum(hist)
     value, error = 0, 0
     if total > 0:
@@ -17,7 +21,7 @@ def weighted_average(hist):
 
 
 def color_from_histogram(hist):
-    """Returns the average rgb color from a given histogram of pixle color counts"""
+    """Devuelve el color RGB promedio de un histograma dado."""
     r, re = weighted_average(hist[:256])
     g, ge = weighted_average(hist[256:512])
     b, be = weighted_average(hist[512:768])
@@ -26,43 +30,41 @@ def color_from_histogram(hist):
 
 
 class QuadtreeNode(object):
-    """Node for Quadtree that holds a subsection of an image and 
-        information about that section"""
+    """Nodo para el Quadtree que contiene una subsección de una imagen."""
 
     def __init__(self, img, box, depth):
-        self.box = box  # (left, top, right, bottom)
+        self.box = box
         self.depth = depth
-        self.children = None  # tl, tr, bl, br
+        self.children = None
         self.leaf = False
 
-        # Gets the nodes average color
         image = img.crop(box)
-        self.width, self.height = image.size  # (width, height)
+        self.width, self.height = image.size
         hist = image.histogram()
-        self.color, self.error = color_from_histogram(hist)  # (r, g, b), error
+        self.color, self.error = color_from_histogram(hist)
 
     def is_leaf(self):
-        """Determins if a the node is a leaf"""
         return self.leaf
 
     def split(self, img):
-        """Splits the given image section into four equal image boxes"""
+        """Divide la sección de la imagen en cuatro cajas iguales."""
         l, t, r, b = self.box
-        lr = l + (r - l) / 2
-        tb = t + (b - t) / 2
-        tl = QuadtreeNode(img, (l, t, lr, tb), self.depth+1)
-        tr = QuadtreeNode(img, (lr, t, r, tb), self.depth+1)
-        bl = QuadtreeNode(img, (l, tb, lr, b), self.depth+1)
-        br = QuadtreeNode(img, (lr, tb, r, b), self.depth+1)
+        
+        # FIX: Asegurarse de que las coordenadas sean enteros para el crop
+        lr = int(l + (r - l) / 2)
+        tb = int(t + (b - t) / 2)
+
+        tl = QuadtreeNode(img, (l, t, lr, tb), self.depth + 1)
+        tr = QuadtreeNode(img, (lr, t, r, tb), self.depth + 1)
+        bl = QuadtreeNode(img, (l, tb, lr, b), self.depth + 1)
+        br = QuadtreeNode(img, (lr, tb, r, b), self.depth + 1)
         self.children = [tl, tr, bl, br]
 
 
 class Quadtree(object):
-    """Tree that has nodes with at most four child nodes that hold 
-        sections of an image where there at most n leaf nodes where
-        n is the number of pixles in the image"""
+    """Árbol con nodos que contienen secciones de una imagen."""
 
-    def __init__(self, image, max_depth=1024):
+    def __init__(self, image, max_depth=10):
         self.root = QuadtreeNode(image, image.getbbox(), 0)
         self.width, self.height = image.size
         self.max_depth = 0
@@ -70,7 +72,7 @@ class Quadtree(object):
         self._build_tree(image, self.root, max_depth)
 
     def _build_tree(self, image, node, max_depth):
-        """Recursively adds nodes untill max_depth is reached or error is less than 5"""
+        """Construye el árbol recursivamente hasta alcanzar la profundidad máxima o el umbral de error."""
         if (node.depth >= max_depth) or (node.error <= ERROR_THRESHOLD):
             if node.depth > self.max_depth:
                 self.max_depth = node.depth
@@ -82,31 +84,29 @@ class Quadtree(object):
             self._build_tree(image, child, max_depth)
 
     def get_leaf_nodes(self, depth):
-        """Gets all the nodes on a given depth/level"""
-        def get_leaf_nodes_recusion(tree, node, depth, func):
-            """Recusivley gets leaf nodes based on whether a node is a leaf or the given depth is reached"""
-            if node.leaf is True or node.depth == depth:
-                func(node)
-            elif node.children is not None:
-                for child in node.children:
-                    get_leaf_nodes_recusion(tree, child, depth, func)
-
-        if depth > tree.max_depth:
-            raise ValueError('A depth larger than the trees depth was given')
+        """Obtiene todos los nodos en una profundidad/nivel dado."""
+        if depth > self.max_depth:
+            raise ValueError('La profundidad solicitada es mayor que la del árbol')
 
         leaf_nodes = []
-        get_leaf_nodes_recusion(self, self.root, depth, leaf_nodes.append)
+
+        def get_leaf_nodes_recursion(node, target_depth):
+            if node.is_leaf() or node.depth == target_depth:
+                leaf_nodes.append(node)
+            elif node.children is not None:
+                for child in node.children:
+                    get_leaf_nodes_recursion(child, target_depth)
+
+        get_leaf_nodes_recursion(self.root, depth)
         return leaf_nodes
 
     def _create_image_from_depth(self, depth):
-        """Creates a Pillow image object from a given level/depth of the tree"""
+        """Crea un objeto de imagen de Pillow a partir de un nivel/profundidad del árbol."""
         m = OUTPUT_SCALE
-        dx, dy = (PADDING, PADDING)  # padding for each image section
-        image = Image.new('RGB', (int(self.width * m + dx),
-                                  int(self.height * m + dy)))
+        dx, dy = (PADDING, PADDING)
+        image = Image.new('RGB', (int(self.width * m + dx), int(self.height * m + dy)))
         draw = ImageDraw.Draw(image)
-        draw.rectangle((0, 0, self.width * m + dx,
-                        self.height * m + dy), (0, 0, 0))
+        draw.rectangle((0, 0, self.width * m, self.height * m), (0, 0, 0))
 
         leaf_nodes = self.get_leaf_nodes(depth)
         for node in leaf_nodes:
@@ -115,27 +115,55 @@ class Quadtree(object):
             draw.rectangle(box, node.color)
         return image
 
-    def render_at_depth(self, depth=0):
-        """Renders the image of a given depth/level"""
-        if depth > self.max_depth:
-            raise ValueError('A depth larger than the trees depth was given')
-
-        image = self._create_image_from_depth(depth)
-        image.show()
-
-    def create_gif(self, file_name, duration=1000, loop=0):
-        """Creates a gif at the given filename from each level of the tree"""
+    def create_gif(self, file_name, duration=500, loop=0):
+        """Crea un GIF a partir de cada nivel del árbol."""
         images = []
+        # Imagen final para mostrarla por más tiempo
         end_product_image = self._create_image_from_depth(self.max_depth)
-        for i in range(self.max_depth):
+        
+        # Genera una imagen por cada nivel de profundidad
+        for i in range(self.max_depth + 1):
             image = self._create_image_from_depth(i)
             images.append(image)
-        # Add extra final produc images to allow for seeing result longer
-        for _ in range(4):
+        
+        # Agrega la imagen final varias veces para que se aprecie mejor
+        for _ in range(3):
             images.append(end_product_image)
-        # Save the images as a gif using Pillow
+
+        print(f"Creando GIF con {len(images)} fotogramas...")
         images[0].save(
             file_name,
             save_all=True,
             append_images=images[1:],
-            duration=duration, loop=loop)
+            duration=duration,
+            loop=loop)
+
+# --- BLOQUE PRINCIPAL PARA EJECUTAR EL CÓDIGO ---
+if __name__ == '__main__':
+    # 1. CAMBIA ESTE VALOR AL NOMBRE DE TU IMAGEN
+    IMAGE_PATH = 'img.jpg' # Por ejemplo: 'mi_foto.png'
+    
+    # 2. NOMBRE DEL ARCHIVO GIF DE SALIDA
+    OUTPUT_GIF_PATH = 'quadtree_animation.gif'
+
+    try:
+        print(f"Cargando imagen desde '{IMAGE_PATH}'...")
+        image = Image.open(IMAGE_PATH)
+        
+        # Asegurarse de que la imagen esté en modo RGB
+        image = image.convert('RGB')
+
+        print("Construyendo el Quadtree. Esto puede tardar un momento...")
+        quadtree = Quadtree(image, max_depth=MAX_DEPTH)
+
+        print(f"La profundidad máxima del árbol es: {quadtree.max_depth}")
+        
+        quadtree.create_gif(OUTPUT_GIF_PATH)
+        
+        print(f"¡Éxito! El GIF ha sido guardado como '{OUTPUT_GIF_PATH}' en el mismo directorio.")
+
+    except FileNotFoundError:
+        print(f"Error: No se pudo encontrar la imagen '{IMAGE_PATH}'.")
+        print("Asegúrate de que el archivo de imagen esté en la misma carpeta que este script y que el nombre sea correcto.")
+    except Exception as e:
+        print(f"Ocurrió un error inesperado: {e}")
