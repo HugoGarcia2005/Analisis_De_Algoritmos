@@ -1,0 +1,11 @@
+Hugo Garcia
+- Crear Diagrama de Flujo del algoritmo
+- Plantear y comenzar el Codigo Base
+- Trabajar en la implementacion del algoritmo de Huffman
+- Comenzar y trabajar en la guia de usuario
+
+Oswaldo Maciel
+- Escoger un libro para comprimir
+- Trabajar en la implementacion del algoritmo de Huffman (debug)
+- Tomar capturas del funcionamiento
+- Trabajar y finalziar la guia de usuario
