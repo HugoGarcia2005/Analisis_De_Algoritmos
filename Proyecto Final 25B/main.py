@@ -1,4 +1,4 @@
-# [Act.Codigo] Main Modular - Proyecto Final
+# Proyecto Final 25B
 # Equipo Tr3s
 # Garcia Saldivar Hugo Gabriel
 # Maciel Vargas Oswaldo Daniel
@@ -451,4 +451,5 @@ def create_gui():
     root.mainloop()
 
 if __name__ == '__main__':
+
     create_gui()
