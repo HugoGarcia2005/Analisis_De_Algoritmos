@@ -10,7 +10,7 @@ En la carpeta src se encontrarán carpetas con los códigos de Python mientras q
 las capturas de los resultados, gráficas o comparativas.
 
 
-Primeramente, descargue y ejecute el código main.py de la carpeta src, este archivo contiene el programa completo.
+Primeramente, descargue todo el contenido y ejecute el main.py
 
 
 Dentro del programa suba una imagen en el apartado “Configuración” despues de hacer esto y en este mismo apartado
@@ -21,3 +21,4 @@ comprensión o la codificación de Huffman y una variable de error.
 Al final el programa entregará tanto gráficas de complejidad temporal y espacial, asi como los resultados de las
 imágenes en la carpeta raíz del proyecto. Si desea iniciar nuevamente pulse el botón “Limpiar todo” o cierre y abra
 el programa.
+
